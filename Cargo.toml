@@ -1,0 +1,19 @@
+[package]
+name = "gmres"
+version = "0.1.0"
+authors = ["Ricard Lado"]
+description = "A Rust library for solving sparse linear systems using the GMRES iterative method."
+categories = ["mathematics", "science"]
+keywords = ["math", "linear", "algebra", "sparse", "matrix"]
+license = "MIT"
+repository = "https://github.com/rlado/GRMES"
+readme = "README.md"
+edition = "2021"
+exclude = [".github/",]
+
+[lib]
+name = "gmres"
+path = "src/lib.rs"
+
+[dependencies]
+rsparse = "0.2.0"
