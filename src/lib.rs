@@ -4,7 +4,6 @@
 use rsparse;
 use rsparse::data::Sprs;
 pub mod dense_math;
-use dense_math::Num;
 
 /// Get a `Sprs` single column from a Sprs matrix
 /// # Parameters:
@@ -81,24 +80,16 @@ fn norm2(v: &Vec<Vec<f64>>) -> f64 {
 /// Calculate the givens rotation matrix
 ///
 fn givens_rotation(v1: f64, v2: f64) -> (f64, f64) {
-    let cs;
-    let sn;
-
-    if v1 == 0. {
-        cs = 0.;
-        sn = 1.;
-    } else {
-        let t = (v1.powi(2) + v2.powi(2)).powi(-1);
-        cs = v1 / t;
-        sn = v2 / t;
-    }
+    let t = (v1.powi(2) + v2.powi(2)).powf(0.5);
+    let cs = v1 / t;
+    let sn = v2 / t;
 
     return (cs, sn);
 }
 
 /// Apply givens rotation to H col
 ///
-pub fn apply_givens_rotation(h: &mut Vec<f64>, cs: &mut Vec<f64>, sn: &mut Vec<f64>, k: usize) {
+fn apply_givens_rotation(h: &mut Vec<f64>, cs: &mut Vec<f64>, sn: &mut Vec<f64>, k: usize) {
     for i in 0..k {
         let temp = cs[i] * h[i] + sn[i] * h[i + 1];
         h[i + 1] = -sn[i] * h[i] + cs[i] * h[i + 1];
@@ -117,24 +108,23 @@ pub fn apply_givens_rotation(h: &mut Vec<f64>, cs: &mut Vec<f64>, sn: &mut Vec<f
 ///
 pub fn gmres_dense(
     a: &Vec<Vec<f64>>,
-    b: &mut Vec<f64>,
-    x: Vec<f64>,
+    b: &Vec<f64>,
+    x: &mut Vec<f64>,
     max_iter: usize,
     threshold: f64,
 ) {
-    let n = a.len();
     let bm = vec![b.clone()];
 
     // Use x as the initial vector
-    let mut r = dense_math::add_mat(
+    let r = dense_math::add_mat(
         &dense_math::transpose(&bm),
-        &dense_math::mul_mat(&a, &dense_math::transpose(&vec![x])),
+        &dense_math::mul_mat(&a, &dense_math::transpose(&vec![x.clone()])),
         1.,
         -1.,
     );
 
     let b_norm = norm2(&bm);
-    let mut r_norm = norm2(&r);
+    let r_norm = norm2(&r);
     let mut error = r_norm / b_norm;
 
     // Initialize 1D vectors
@@ -147,7 +137,10 @@ pub fn gmres_dense(
     let mut beta = dense_math::scxvec(r_norm, &e1);
     let mut hs = Vec::with_capacity(max_iter); //Store hessemberg vectors
 
+    let mut ks = 0;
     for k in 0..max_iter {
+        ks = k;
+
         // Arnoldi
         let (mut h, qv) = arnoldi(&a, &q, k);
         //hs.push(h.clone());
@@ -171,22 +164,39 @@ pub fn gmres_dense(
     }
 
     // Form H matrix
-    dbg!(&hs);
-    let mut hm = vec![vec![]; hs[hs.len() - 1].len()];
-    let col_len = hs[hs.len() - 1].len();
-    for h in hs {
-        let mut th = h.clone();
+    let col_len = ks + 1;
+    let mut hm = vec![vec![]; col_len];
+    for i in 0..col_len {
+        let mut th = hs[i].clone();
         // Pad the column with 0s to complete the column length
-        for _ in h.len()..col_len {
+        for _ in th.len()..col_len {
             th.push(0.);
         }
         // Transpose h and add to hm
-        add_col_dense(&mut hm, &dense_math::transpose(&vec![th]));
+        add_col_dense(
+            &mut hm,
+            &dense_math::transpose(&vec![th[..col_len].to_vec()]),
+        );
     }
 
+    // Reduce Q to Q(:, 1:k)
+    for i in 0..q.len() {
+        q[i] = q[i][..col_len].to_vec();
+    }
+    dbg!(&q);
+
+    dbg!(&hm, &beta[..col_len].to_vec());
     // Calculate the result
-    //let y =
-    dbg!(hm, beta);
+    let mut y = beta[..col_len].to_vec();
+    let mut hms = rsparse::data::Sprs::new();
+    hms.from_vec(&hm);
+    rsparse::usolve(&hms, &mut y);
+    *x = dense_math::add_vec(
+        &x,
+        &dense_math::transpose(&dense_math::mul_mat(&q, &dense_math::transpose(&vec![y])))[0],
+        1.,
+        1.,
+    );
 }
 
 /// Add column matrix to dense matrix

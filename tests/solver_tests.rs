@@ -14,7 +14,12 @@ fn gmres_dense_1() {
     let mut b = vec![0.104594, 0.437549, 0.040264, 0.298842, 0.254451];
     let blen = b.len();
 
-    gmres::gmres_dense(&a, &mut b, vec![0.; blen], 100, 1e-5);
+    let mut x = vec![0.; blen];
+    gmres::gmres_dense(&a, &mut b, &mut x, 100, 1e-5);
 
-    assert_eq!(b, vec![0.037919, 0.888551, -0.657575, -0.181680, 0.292447]);
+    utils::assert_eq_f_vec(
+        &x,
+        &vec![0.037919, 0.888551, -0.657575, -0.181680, 0.292447],
+        1e-5,
+    );
 }
