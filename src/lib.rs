@@ -104,7 +104,19 @@ fn apply_givens_rotation(h: &mut Vec<f64>, cs: &mut Vec<f64>, sn: &mut Vec<f64>,
     h[k + 1] = 0.;
 }
 
-/// GMRES function for dense
+/// GMRES solver for dense input matrices. Solves Ax = b. Overwrites x with
+/// the solution.
+///
+/// # Parameters:
+/// - a: Dense matrix
+/// - b: Dense vector
+/// - x: Initial guess. When solving differential equations `b` is generally a
+/// good guess
+/// - max_iter: Maximum number of iterations
+/// - threshold: Threshold for convergence
+///
+/// # Returns:
+/// - Error if the method fails to converge
 ///
 pub fn gmres_dense(
     a: &Vec<Vec<f64>>,
@@ -112,7 +124,7 @@ pub fn gmres_dense(
     x: &mut Vec<f64>,
     max_iter: usize,
     threshold: f64,
-) {
+) -> Result<(), String> {
     let bm = vec![b.clone()];
 
     // Use x as the initial vector
@@ -183,9 +195,7 @@ pub fn gmres_dense(
     for i in 0..q.len() {
         q[i] = q[i][..col_len].to_vec();
     }
-    dbg!(&q);
 
-    dbg!(&hm, &beta[..col_len].to_vec());
     // Calculate the result
     let mut y = beta[..col_len].to_vec();
     let mut hms = rsparse::data::Sprs::new();
@@ -197,6 +207,15 @@ pub fn gmres_dense(
         1.,
         1.,
     );
+
+    if error <= threshold {
+        Ok(())
+    } else {
+        Err(format!(
+            "GMRES did not converge. Error: {}. Threshold: {}",
+            error, threshold
+        ))
+    }
 }
 
 /// Add column matrix to dense matrix
