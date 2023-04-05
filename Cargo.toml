@@ -16,4 +16,4 @@ name = "gmres"
 path = "src/lib.rs"
 
 [dependencies]
-rsparse = "0.2.0"
+rsparse = "0.2.3"
