@@ -230,7 +230,8 @@ pub fn gmres(
     }
 
     // Reduce Q to Q(:, 1:k)
-    q.p = q.p[..col_len].to_vec();
+    q.p = q.p[..col_len+1].to_vec();
+    q.n = col_len;
 
     // Calculate the result
     let mut y = beta[..col_len].to_vec();
@@ -390,6 +391,8 @@ fn add_col_sparse(a: &mut Sprs, cm: &Sprs) {
         a.i.push(cm.i[i]);
         a.x.push(cm.x[i]);
     }
+    a.nzmax += cm.nzmax;
+    a.n += 1;
 }
 
 /// --- Unit tests ------------------------------------------------------------
