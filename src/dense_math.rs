@@ -1,6 +1,6 @@
 //! Basic dense matrix and vector operations
 //! 
-//! Borrowed from https://github.com/RLado/STSYS
+//! Borrowed from: <https://github.com/RLado/STSYS>
 //!
 
 pub trait Zero: Sized + std::ops::Add<Self, Output = Self> {

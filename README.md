@@ -2,6 +2,8 @@
 
 A sparse linear system solver using the GMRES iterative method.
 
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/rlado/GMRES/rust.yml) [![Crates.io](https://img.shields.io/crates/d/gmres)](https://crates.io/crates/gmres) [![Crates.io](https://img.shields.io/crates/v/gmres)](https://crates.io/crates/gmres)
+
 ---
 
 This crates provides a solver for `Ax=b` linear problems using the GMRES method.
