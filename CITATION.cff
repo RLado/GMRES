@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: GMRES
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - family-names: Lado-Roigé
+    given-names: Ricard
+    orcid: 'https://orcid.org/0000-0002-6421-7351'
+repository-code: 'https://github.com/RLado/GMRES'
+url: 'https://crates.io/crates/gmres'
+abstract: >-
+  A sparse linear system solver using the GMRES iterative method implemented in Rust
+keywords:
+  - sparse-matrices
+  - linear-algebra
+  - math
+  - rust
+  - GMRES
+license: MIT
+version: 0.1.1
+date-released: '2023-04-07'

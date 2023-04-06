@@ -183,7 +183,7 @@ fn apply_givens_rotation(h: &mut Vec<f64>, cs: &mut Vec<f64>, sn: &mut Vec<f64>,
 /// the solution.
 ///
 /// # Parameters:
-/// - a: Dense matrix
+/// - a: `Sprs` matrix
 /// - b: Dense vector
 /// - x: Initial guess. When solving differential equations `b` is generally a
 /// good guess
