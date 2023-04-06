@@ -1,4 +1,6 @@
 /// Assert if A is equal to B within an acceptable margin of error (tol)
+/// [Borrowed from `rsparse` https://github.com/RLado/rsparse]
+///
 pub fn assert_eq_f_vec(a: &Vec<f64>, b: &Vec<f64>, tol: f64) {
     for i in 0..a.len() {
         let diff = f64::abs(a[i] - b[i]);
@@ -43,6 +45,8 @@ fn assert_eq_f_vec_2() {
 }
 
 /// Assert if A is equal to B within an acceptable margin of error (tol)
+/// [Borrowed from `rsparse` https://github.com/RLado/rsparse]
+///
 pub fn assert_eq_f2d_vec(a: &Vec<Vec<f64>>, b: &Vec<Vec<f64>>, tol: f64) {
     for i in 0..a.len() {
         for j in 0..a[0].len() {
