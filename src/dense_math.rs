@@ -1,4 +1,5 @@
 //! Basic dense matrix and vector operations
+//! 
 //! Borrowed from https://github.com/RLado/STSYS
 //!
 

@@ -1,3 +1,8 @@
+//! Testing utilities
+//! 
+//! Borrowed from `rsparse` https://github.com/RLado/rsparse
+//! 
+
 /// Assert if A is equal to B within an acceptable margin of error (tol)
 /// [Borrowed from `rsparse` https://github.com/RLado/rsparse]
 ///

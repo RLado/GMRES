@@ -11,11 +11,11 @@ fn gmres_1() {
         vec![0.454428, 0.253192, 0.173598, 0.321640, 0.632031],
     ]);
 
-    let mut b = vec![0.104594, 0.437549, 0.040264, 0.298842, 0.254451];
+    let b = vec![0.104594, 0.437549, 0.040264, 0.298842, 0.254451];
     let blen = b.len();
 
     let mut x = vec![0.; blen];
-    gmres::gmres(&a, &mut b, &mut x, 100, 1e-5).unwrap();
+    gmres::gmres(&a, &b, &mut x, 100, 1e-5).unwrap();
 
     gmres::test_utils::assert_eq_f_vec(
         &x,
