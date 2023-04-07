@@ -19,5 +19,5 @@ keywords:
   - rust
   - GMRES
 license: MIT
-version: 0.1.1
+version: 0.1.2
 date-released: '2023-04-07'

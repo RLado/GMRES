@@ -1,8 +1,7 @@
 //! Basic dense matrix and vector operations
-//! 
-//! Borrowed from: <https://github.com/RLado/STSYS>
 //!
 
+/// Returns the additive identity element of `Self`, `0`.
 pub trait Zero: Sized + std::ops::Add<Self, Output = Self> {
     /// Returns the additive identity element of `Self`, `0`.
     ///
