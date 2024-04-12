@@ -71,7 +71,7 @@ impl Num for f64 {}
 /// ```
 /// use gmres::dense_math::scpmat;
 ///
-/// let a = vec![
+/// let a = [
 ///     vec![1, 2, 3],
 ///     vec![4, 5, 6],
 ///     vec![7, 8, 9],
@@ -81,7 +81,7 @@ impl Num for f64 {}
 ///
 /// let c = scpmat(s, &a);
 ///
-/// assert_eq!(&c, &vec![
+/// assert_eq!(&c, &[
 ///     vec![6,7,8],
 ///     vec![9,10,11],
 ///     vec![12,13,14],
@@ -109,7 +109,7 @@ pub fn scpmat<T: Num>(scalar: T, mat: &[Vec<T>]) -> Vec<Vec<T>> {
 /// ```
 /// use gmres::dense_math::scxmat;
 ///
-/// let a = vec![
+/// let a = [
 ///     vec![1, 2, 3],
 ///     vec![4, 5, 6],
 ///     vec![7, 8, 9],
@@ -119,7 +119,7 @@ pub fn scpmat<T: Num>(scalar: T, mat: &[Vec<T>]) -> Vec<Vec<T>> {
 ///
 /// let c = scxmat(s, &a);
 ///
-/// assert_eq!(&c, &vec![
+/// assert_eq!(&c, &[
 ///     vec![5, 10, 15],
 ///     vec![20, 25, 30],
 ///     vec![35, 40, 45],
@@ -317,13 +317,13 @@ pub fn cross_prod_3d<T: Num + std::ops::Mul<Output = T> + std::ops::Sub<Output =
 /// ```
 /// use gmres::dense_math::add_mat;
 ///
-/// let a = vec![
+/// let a = [
 ///     vec![1, 2, 3],
 ///     vec![4, 5, 6],
 ///     vec![7, 8, 9],
 /// ];
 ///
-/// let b = vec![
+/// let b = [
 ///     vec![5, 5, 5],
 ///     vec![5, 5, 5],
 ///     vec![5, 5, 5],
@@ -331,7 +331,7 @@ pub fn cross_prod_3d<T: Num + std::ops::Mul<Output = T> + std::ops::Sub<Output =
 ///
 /// let c = add_mat(&a, &b, 1, 1);
 ///
-/// assert_eq!(&c, &vec![
+/// assert_eq!(&c, &[
 ///     vec![6, 7, 8],
 ///     vec![9, 10, 11],
 ///     vec![12, 13, 14],
@@ -374,13 +374,13 @@ where
 /// ```
 /// use gmres::dense_math::mul_mat;
 ///
-/// let a = vec![
+/// let a = [
 ///     vec![1, 2, 3],
 ///     vec![4, 5, 6],
 ///     vec![7, 8, 9],
 /// ];
 ///
-/// let b = vec![
+/// let b = [
 ///     vec![5, 5, 5],
 ///     vec![5, 5, 5],
 ///     vec![5, 5, 5],
@@ -388,7 +388,7 @@ where
 ///
 /// let c = mul_mat(&a, &b);
 ///
-/// assert_eq!(&c, &vec![
+/// assert_eq!(&c, &[
 ///     vec![30, 30, 30],
 ///     vec![75, 75, 75],
 ///     vec![120, 120, 120],
@@ -427,7 +427,7 @@ pub fn mul_mat<T: Num + std::ops::AddAssign<<T as std::ops::Mul>::Output>>(
 /// ```
 /// use gmres::dense_math::transpose;
 ///
-/// let a = vec![
+/// let a = [
 ///    vec![2.1615, 2.0044, 2.1312, 0.8217, 2.2074],
 ///    vec![2.2828, 1.9089, 1.9295, 0.9412, 2.0017],
 ///    vec![2.2156, 1.8776, 1.9473, 1.0190, 1.8352],
@@ -437,7 +437,7 @@ pub fn mul_mat<T: Num + std::ops::AddAssign<<T as std::ops::Mul>::Output>>(
 ///
 /// assert_eq!(
 ///     transpose(&a),
-///     vec![
+///     [
 ///         vec![2.1615, 2.2828, 2.2156, 1.0244, 2.0367],
 ///         vec![2.0044, 1.9089, 1.8776, 0.8742, 1.5642],
 ///         vec![2.1312, 1.9295, 1.9473, 0.9177, 1.4313],
