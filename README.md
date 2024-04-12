@@ -21,7 +21,7 @@ use rsparse::data::Sprs;
 
 fn main() {
     // Define an arbitrary matrix `A`
-    let a = Sprs::new_from_vec(&vec![
+    let a = Sprs::new_from_vec(&[
         vec![0.888641, 0.477151, 0.764081, 0.244348, 0.662542],
         vec![0.695741, 0.991383, 0.800932, 0.089616, 0.250400],
         vec![0.149974, 0.584978, 0.937576, 0.870798, 0.990016],

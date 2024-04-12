@@ -1,6 +1,6 @@
 [package]
 name = "gmres"
-version = "0.1.2"
+version = "1.0.0"
 authors = ["Ricard Lado"]
 description = "A sparse linear system solver using the GMRES iterative method."
 categories = ["mathematics", "science"]
@@ -16,4 +16,4 @@ name = "gmres"
 path = "src/lib.rs"
 
 [dependencies]
-rsparse = "0.2.3"
+rsparse = "1.0.0"

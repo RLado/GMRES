@@ -89,7 +89,7 @@ impl Num for f64 {}
 /// );
 /// ```
 ///
-pub fn scpmat<T: Num>(scalar: T, mat: &Vec<Vec<T>>) -> Vec<Vec<T>> {
+pub fn scpmat<T: Num>(scalar: T, mat: &[Vec<T>]) -> Vec<Vec<T>> {
     let rows = mat.len();
     let columns = mat[0].len();
 
@@ -100,7 +100,7 @@ pub fn scpmat<T: Num>(scalar: T, mat: &Vec<Vec<T>>) -> Vec<Vec<T>> {
         }
     }
 
-    return r;
+    r
 }
 
 /// Scalar times dense matrix
@@ -127,7 +127,7 @@ pub fn scpmat<T: Num>(scalar: T, mat: &Vec<Vec<T>>) -> Vec<Vec<T>> {
 /// );
 /// ```
 ///
-pub fn scxmat<T: Num + std::ops::Mul<Output = T>>(scalar: T, mat: &Vec<Vec<T>>) -> Vec<Vec<T>> {
+pub fn scxmat<T: Num + std::ops::Mul<Output = T>>(scalar: T, mat: &[Vec<T>]) -> Vec<Vec<T>> {
     let rows = mat.len();
     let columns = mat[0].len();
 
@@ -138,7 +138,7 @@ pub fn scxmat<T: Num + std::ops::Mul<Output = T>>(scalar: T, mat: &Vec<Vec<T>>) 
         }
     }
 
-    return r;
+    r
 }
 
 /// Scalar plus dense vector
@@ -156,13 +156,13 @@ pub fn scxmat<T: Num + std::ops::Mul<Output = T>>(scalar: T, mat: &Vec<Vec<T>>) 
 /// assert_eq!(&c, &vec![6, 7, 8]);
 /// ```
 ///
-pub fn scpvec<T: Num>(scalar: T, v: &Vec<T>) -> Vec<T> {
+pub fn scpvec<T: Num>(scalar: T, v: &[T]) -> Vec<T> {
     let mut r = vec![T::zero(); v.len()];
     for i in 0..v.len() {
         r[i] = v[i] + scalar;
     }
 
-    return r;
+    r
 }
 
 /// Scalar times dense vector
@@ -180,13 +180,13 @@ pub fn scpvec<T: Num>(scalar: T, v: &Vec<T>) -> Vec<T> {
 /// assert_eq!(&c, &vec![5, 10, 15]);
 /// ```
 ///
-pub fn scxvec<T: Num + std::ops::Mul<Output = T>>(scalar: T, v: &Vec<T>) -> Vec<T> {
+pub fn scxvec<T: Num + std::ops::Mul<Output = T>>(scalar: T, v: &[T]) -> Vec<T> {
     let mut r = vec![T::zero(); v.len()];
     for i in 0..v.len() {
         r[i] = v[i] * scalar;
     }
 
-    return r;
+    r
 }
 
 /// Dense vector addition
@@ -204,7 +204,7 @@ pub fn scxvec<T: Num + std::ops::Mul<Output = T>>(scalar: T, v: &Vec<T>) -> Vec<
 /// assert_eq!(&c, &vec![2, 4, 6]);
 /// ```
 ///
-pub fn add_vec<T: Num>(a: &Vec<T>, b: &Vec<T>, alpha: T, beta: T) -> Vec<T>
+pub fn add_vec<T: Num>(a: &[T], b: &[T], alpha: T, beta: T) -> Vec<T>
 where
     <T as std::ops::Mul>::Output: std::ops::Add<Output = T>,
 {
@@ -217,7 +217,7 @@ where
     for i in 0..len {
         c.push(alpha * a[i] + beta * b[i]);
     }
-    return c;
+    c
 }
 
 /// Dense vector multiplication
@@ -235,7 +235,7 @@ where
 /// assert_eq!(&c, &vec![1, 4, 9]);
 /// ```
 ///
-pub fn mul_vec<T: Num + std::ops::Mul<Output = T>>(a: &Vec<T>, b: &Vec<T>) -> Vec<T> {
+pub fn mul_vec<T: Num + std::ops::Mul<Output = T>>(a: &[T], b: &[T]) -> Vec<T> {
     let len = a.len();
     if len != b.len() {
         panic!("Vector dimensions do not match.");
@@ -245,7 +245,7 @@ pub fn mul_vec<T: Num + std::ops::Mul<Output = T>>(a: &Vec<T>, b: &Vec<T>) -> Ve
     for i in 0..len {
         c.push(a[i] * b[i]);
     }
-    return c;
+    c
 }
 
 /// Dense vector dot product
@@ -262,7 +262,7 @@ pub fn mul_vec<T: Num + std::ops::Mul<Output = T>>(a: &Vec<T>, b: &Vec<T>) -> Ve
 /// assert!((c - 1.7768) < 1e-4);
 /// ```
 ///
-pub fn dot_prod<T: Num + std::ops::Mul<Output = T>>(a: &Vec<T>, b: &Vec<T>) -> T {
+pub fn dot_prod<T: Num + std::ops::Mul<Output = T>>(a: &[T], b: &[T]) -> T {
     let len = a.len();
     if len != b.len() {
         panic!("Vector dimensions do not match.");
@@ -273,7 +273,7 @@ pub fn dot_prod<T: Num + std::ops::Mul<Output = T>>(a: &Vec<T>, b: &Vec<T>) -> T
         c += a[i] * b[i];
     }
 
-    return c;
+    c
 }
 
 /// Dense vector cross product
@@ -293,8 +293,8 @@ pub fn dot_prod<T: Num + std::ops::Mul<Output = T>>(a: &Vec<T>, b: &Vec<T>) -> T
 /// ```
 ///
 pub fn cross_prod_3d<T: Num + std::ops::Mul<Output = T> + std::ops::Sub<Output = T>>(
-    a: &Vec<T>,
-    b: &Vec<T>,
+    a: &[T],
+    b: &[T],
 ) -> Vec<T> {
     let len = a.len();
     if len != b.len() {
@@ -304,11 +304,11 @@ pub fn cross_prod_3d<T: Num + std::ops::Mul<Output = T> + std::ops::Sub<Output =
         panic!("Vector dimension must be 3. {} given", len);
     }
 
-    return vec![
+    vec![
         a[1] * b[2] - a[2] * b[1],
         a[2] * b[0] - a[0] * b[2],
         a[0] * b[1] - a[1] * b[0],
-    ];
+    ]
 }
 
 /// Dense matrix add
@@ -340,8 +340,8 @@ pub fn cross_prod_3d<T: Num + std::ops::Mul<Output = T> + std::ops::Sub<Output =
 /// ```
 ///
 pub fn add_mat<T: Num + std::ops::Add<Output = T>>(
-    a: &Vec<Vec<T>>,
-    b: &Vec<Vec<T>>,
+    a: &[Vec<T>],
+    b: &[Vec<T>],
     alpha: T,
     beta: T,
 ) -> Vec<Vec<T>>
@@ -365,7 +365,7 @@ where
         o.push(row);
     }
 
-    return o;
+    o
 }
 
 /// Dense matrix multiplication
@@ -397,8 +397,8 @@ where
 /// ```
 ///
 pub fn mul_mat<T: Num + std::ops::AddAssign<<T as std::ops::Mul>::Output>>(
-    a: &Vec<Vec<T>>,
-    b: &Vec<Vec<T>>,
+    a: &[Vec<T>],
+    b: &[Vec<T>],
 ) -> Vec<Vec<T>> {
     let rows_a = a.len();
     let columns_a = a[0].len();
@@ -418,7 +418,7 @@ pub fn mul_mat<T: Num + std::ops::AddAssign<<T as std::ops::Mul>::Output>>(
         }
     }
 
-    return r;
+    r
 }
 
 /// Transpose a dense matrix
@@ -447,7 +447,7 @@ pub fn mul_mat<T: Num + std::ops::AddAssign<<T as std::ops::Mul>::Output>>(
 ///  );
 /// ```
 ///
-pub fn transpose<T: Num>(a: &Vec<Vec<T>>) -> Vec<Vec<T>> {
+pub fn transpose<T: Num>(a: &[Vec<T>]) -> Vec<Vec<T>> {
     let rows = a.len();
     let columns = a[0].len();
 
@@ -458,5 +458,5 @@ pub fn transpose<T: Num>(a: &Vec<Vec<T>>) -> Vec<Vec<T>> {
         }
     }
 
-    return r;
+    r
 }
