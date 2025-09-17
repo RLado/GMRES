@@ -7,7 +7,7 @@ pub trait Zero: Sized + std::ops::Add<Self, Output = Self> {
     ///
     /// # Laws
     ///
-    /// ```{.text}
+    /// ```ignore
     /// a + 0 = a       ∀ a ∈ Self
     /// 0 + a = a       ∀ a ∈ Self
     /// ```
@@ -287,7 +287,7 @@ pub fn dot_prod<T: Num + std::ops::Mul<Output = T>>(a: &[T], b: &[T]) -> T {
 ///
 /// let c = cross_prod_3d(&a, &b);
 ///
-/// assert!((c[0] - -0.3450) < 1e-4);     
+/// assert!((c[0] - -0.3450) < 1e-4);
 /// assert!((c[1] - 0.1568) < 1e-4);
 /// assert!((c[2] - 0.3175) < 1e-4);
 /// ```

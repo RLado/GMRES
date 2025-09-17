@@ -41,7 +41,6 @@
 //!     1e-5,
 //! );
 //! ```
-//!
 
 use rsparse::data::Sprs;
 pub mod dense_math;
@@ -50,9 +49,9 @@ pub mod dense_math;
 /// # Parameters:
 ///    - a: `Sprs` matrix
 ///    - col: Column index
-///    
-fn get_sprs_col(a: &Sprs, col: usize) -> Sprs {
-    let mut r = Sprs::new();
+///
+fn get_sprs_col(a: &Sprs<f64>, col: usize) -> Sprs<f64> {
+    let mut r: Sprs<f64> = Sprs::new();
 
     // Set parameters
     r.nzmax = (a.p[col + 1] - a.p[col]) as usize;
@@ -90,7 +89,7 @@ fn add_col_dense(a: &mut [Vec<f64>], cm: &[Vec<f64>]) {
 ///
 /// Adds `cm` into the last column of `a`
 ///
-fn add_col_sparse(a: &mut Sprs, cm: &Sprs) {
+fn add_col_sparse(a: &mut Sprs<f64>, cm: &Sprs<f64>) {
     // Check number of rows is the same
     assert_eq!(a.m, cm.m);
 
@@ -106,36 +105,34 @@ fn add_col_sparse(a: &mut Sprs, cm: &Sprs) {
 
 /// Norm 2 of a `Sprs` column matrix
 ///
-fn norm2(v: &Sprs) -> f64 {
-    let mut r = 0.;
-    for i in 0..v.x.len() {
-        r += v.x[i].powi(2);
+fn norm2(v: &Sprs<f64>) -> f64 {
+    let mut r: f64 = 0.0;
+    for val in &v.x {
+        r += val.powi(2);
     }
-
-    r.powf(0.5)
+    r.sqrt()
 }
 
 /// Norm 2 of a [f64]
 ///
 fn norm2_vec(v: &[f64]) -> f64 {
-    let mut r = 0.;
+    let mut r: f64 = 0.0;
     for i in v.iter() {
         r += i.powi(2);
     }
-
-    r.powf(0.5)
+    r.sqrt()
 }
 
 /// Arnoldi decomposition for sparse matrices
 ///
-fn arnoldi(a: &Sprs, q: &Sprs, k: usize) -> (Vec<f64>, Sprs) {
+fn arnoldi(a: &Sprs<f64>, q: &Sprs<f64>, k: usize) -> (Vec<f64>, Sprs<f64>) {
     let mut qv = a * get_sprs_col(q, k); // Krylov vector
     let mut h = Vec::with_capacity(k + 2);
 
     for i in 0..=k {
         let qci = get_sprs_col(q, i);
         let ht = rsparse::transpose(&qv) * &qci;
-        if ht.i[0] == 0 {
+        if !ht.x.is_empty() && ht.i[0] == 0 {
             h.push(ht.x[0]);
         } else {
             h.push(0.);
@@ -144,7 +141,9 @@ fn arnoldi(a: &Sprs, q: &Sprs, k: usize) -> (Vec<f64>, Sprs) {
     }
 
     h.push(norm2(&qv));
-    qv = qv / h[k + 1];
+    if h[k + 1] != 0.0 {
+        qv = qv / h[k + 1];
+    }
 
     (h, qv)
 }
@@ -152,7 +151,13 @@ fn arnoldi(a: &Sprs, q: &Sprs, k: usize) -> (Vec<f64>, Sprs) {
 /// Calculate the givens rotation matrix
 ///
 fn givens_rotation(v1: f64, v2: f64) -> (f64, f64) {
-    let t = (v1.powi(2) + v2.powi(2)).powf(0.5);
+    if v2 == 0.0 {
+        return (1.0, 0.0);
+    }
+    if v1 == 0.0 {
+        return (0.0, 1.0);
+    }
+    let t = (v1.powi(2) + v2.powi(2)).sqrt();
     let cs = v1 / t;
     let sn = v2 / t;
 
@@ -173,7 +178,7 @@ fn apply_givens_rotation(h: &mut [f64], cs: &mut [f64], sn: &mut [f64], k: usize
 
     // Eliminate H(i+1:i)
     h[k] = cs[k] * h[k] + sn[k] * h[k + 1];
-    h[k + 1] = 0.;
+    h[k + 1] = 0.0;
 }
 
 /// GMRES solver for `Sprs` input matrices. Solves Ax = b. Overwrites x with
@@ -191,31 +196,42 @@ fn apply_givens_rotation(h: &mut [f64], cs: &mut [f64], sn: &mut [f64], k: usize
 /// - Error if the method fails to converge
 ///
 pub fn gmres(
-    a: &Sprs,
+    a: &Sprs<f64>,
     b: &[f64],
     x: &mut Vec<f64>,
     max_iter: usize,
     threshold: f64,
 ) -> Result<(), String> {
-    // Use x as the initial vector
-    let r = rsparse::gaxpy(&(-1. * a), x, b);
+    // Calculate initial residual: r = b - A*x
+    let ax = rsparse::gaxpy(a, x, &vec![0.0; a.m]);
+    let r: Vec<f64> = b
+        .iter()
+        .zip(ax.iter())
+        .map(|(b_i, ax_i)| b_i - ax_i)
+        .collect();
 
     let b_norm = norm2_vec(b);
+    if b_norm == 0.0 {
+        // b is the zero vector; the solution is x = 0.
+        for val in x.iter_mut() {
+            *val = 0.0;
+        }
+        return Ok(());
+    }
+
     let r_norm = norm2_vec(&r);
     let mut error = r_norm / b_norm;
 
-    // Initialize 1D vectors (Optimizable?)
+    // Initialize 1D vectors
     let mut sn = vec![0.; max_iter];
     let mut cs = vec![0.; max_iter];
     let mut e1 = vec![0.; max_iter + 1];
     e1[0] = 1.;
     let mut e = vec![error];
-    let mut q = Sprs::new_from_vec(&dense_math::transpose(&[dense_math::scxvec(
-        r_norm.powi(-1),
-        &r,
-    )]));
+    let q_col = dense_math::scxvec(r_norm.powi(-1), &r);
+    let mut q: Sprs<f64> = Sprs::new_from_vec(&dense_math::transpose(&[q_col]));
     let mut beta = dense_math::scxvec(r_norm, &e1);
-    let mut hs = Vec::with_capacity(max_iter); //Store hessemberg vectors
+    let mut hs = Vec::with_capacity(max_iter); //Store hessenberg vectors
 
     let mut ks = 0;
     for k in 0..max_iter {
@@ -223,7 +239,6 @@ pub fn gmres(
 
         // Arnoldi
         let (mut h, qv) = arnoldi(a, &q, k);
-        //hs.push(h.clone());
         add_col_sparse(&mut q, &qv);
 
         // Eliminate the last element in H ith row and update the rotation matrix
@@ -243,25 +258,23 @@ pub fn gmres(
         }
     }
 
-    // Form H matrix
+    // Form H matrix from the stored columns
     let col_len = ks + 1;
     let mut hm = vec![vec![]; col_len];
     for hi in hs.iter().take(col_len) {
         let mut th = hi.clone();
-        // Pad the column with 0s to complete the column length
-        th.resize(col_len, 0.);
-
-        // Transpose h and add to hm
+        th.resize(col_len, 0.0);
         add_col_dense(&mut hm, &dense_math::transpose(&[th[..col_len].to_vec()]));
     }
 
     // Reduce Q to Q(:, 1:k)
     q.p = q.p[..col_len + 1].to_vec();
     q.n = col_len;
+    q.nzmax = (q.p[col_len] - q.p[0]) as usize;
 
-    // Calculate the result
+    // Calculate the result by solving the upper triangular system
     let mut y = beta[..col_len].to_vec();
-    let hms = rsparse::data::Sprs::new_from_vec(&hm);
+    let hms: Sprs<f64> = rsparse::data::Sprs::new_from_vec(&hm);
     rsparse::usolve(&hms, &mut y);
     *x = rsparse::gaxpy(&q, &y, x);
 
@@ -278,96 +291,97 @@ pub fn gmres(
 // --- Unit tests --------------------------------------------------------------
 pub mod test_utils;
 
-#[test]
-fn norm2_1() {
-    let a = Sprs::new_from_vec(&[
-        vec![0.888641],
-        vec![0.695741],
-        vec![0.149974],
-        vec![0.429292],
-        vec![0.454428],
-    ]);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let n = norm2(&a);
+    #[test]
+    fn norm2_1() {
+        let a = Sprs::new_from_vec(&[
+            vec![0.888641],
+            vec![0.695741],
+            vec![0.149974],
+            vec![0.429292],
+            vec![0.454428],
+        ]);
+        let n = norm2(&a);
+        assert!((n - 1.29885603324079).abs() < 1e-9);
+    }
 
-    assert_eq!(n, 1.29885603324079);
-}
+    #[test]
+    fn norm2_vec_1() {
+        let a = vec![0.888641, 0.695741, 0.149974, 0.429292, 0.454428];
+        let n = norm2_vec(&a);
+        assert!((n - 1.29885603324079).abs() < 1e-9);
+    }
 
-#[test]
-fn norm2_vec_1() {
-    let a = vec![0.888641, 0.695741, 0.149974, 0.429292, 0.454428];
+    #[test]
+    fn arnoldi_1() {
+        let a = Sprs::new_from_vec(&[
+            vec![0.888641, 0.477151, 0.764081, 0.244348, 0.662542],
+            vec![0.695741, 0.991383, 0.800932, 0.089616, 0.250400],
+            vec![0.149974, 0.584978, 0.937576, 0.870798, 0.990016],
+            vec![0.429292, 0.459984, 0.056629, 0.567589, 0.048561],
+            vec![0.454428, 0.253192, 0.173598, 0.321640, 0.632031],
+        ]);
+        let q = Sprs::new_from_vec(&[
+            vec![-0.491347],
+            vec![-0.200666],
+            vec![-0.817626],
+            vec![-0.137704],
+            vec![-0.175601],
+        ]);
 
-    let n = norm2_vec(&a);
+        let (h, qv) = arnoldi(&a, &q, 0);
 
-    assert_eq!(n, 1.29885603324079);
-}
+        test_utils::assert_eq_f_vec(&h, &vec![2.077054, 1.022011], 1e-5);
+        test_utils::assert_eq_f2d_vec(
+            &qv.to_dense(),
+            &vec![
+                vec![-0.280376],
+                vec![-0.817181],
+                vec![0.437209],
+                vec![-0.146969],
+                vec![-0.202122],
+            ],
+            1e-5,
+        );
+    }
 
-#[test]
-fn arnoldi_1() {
-    let a = Sprs::new_from_vec(&[
-        vec![0.888641, 0.477151, 0.764081, 0.244348, 0.662542],
-        vec![0.695741, 0.991383, 0.800932, 0.089616, 0.250400],
-        vec![0.149974, 0.584978, 0.937576, 0.870798, 0.990016],
-        vec![0.429292, 0.459984, 0.056629, 0.567589, 0.048561],
-        vec![0.454428, 0.253192, 0.173598, 0.321640, 0.632031],
-    ]);
-    let q = Sprs::new_from_vec(&[
-        vec![-0.491347],
-        vec![-0.200666],
-        vec![-0.817626],
-        vec![-0.137704],
-        vec![-0.175601],
-    ]);
+    #[test]
+    fn arnoldi_2() {
+        let a = Sprs::new_from_vec(&[
+            vec![0.888641, 0.477151, 0.764081, 0.244348, 0.662542],
+            vec![0.695741, 0.991383, 0.800932, 0.089616, 0.250400],
+            vec![0.149974, 0.584978, 0.937576, 0.870798, 0.990016],
+            vec![0.429292, 0.459984, 0.056629, 0.567589, 0.048561],
+            vec![0.454428, 0.253192, 0.173598, 0.321640, 0.632031],
+        ]);
+        let q = Sprs::new_from_vec(&[
+            vec![-0.491347, -0.280376, 0.396178, 0.585492],
+            vec![-0.200666, -0.817181, 0.078428, -0.284736],
+            vec![-0.817626, 0.437209, -0.041516, -0.246211],
+            vec![-0.137704, -0.146969, -0.848475, 0.474661],
+            vec![-0.175601, -0.202122, -0.339498, -0.538704],
+        ]);
 
-    let (h, qv) = arnoldi(&a, &q, 0);
+        let (h, qv) = arnoldi(&a, &q, 3);
 
-    test_utils::assert_eq_f_vec(&h, &vec![2.077054, 1.022011], 1e-5);
-    test_utils::assert_eq_f2d_vec(
-        &qv.to_dense(),
-        &vec![
-            vec![-0.280376],
-            vec![-0.817181],
-            vec![0.437209],
-            vec![-0.146969],
-            vec![-0.202122],
-        ],
-        1e-5,
-    );
-}
-
-#[test]
-fn arnoldi_2() {
-    let a = Sprs::new_from_vec(&[
-        vec![0.888641, 0.477151, 0.764081, 0.244348, 0.662542],
-        vec![0.695741, 0.991383, 0.800932, 0.089616, 0.250400],
-        vec![0.149974, 0.584978, 0.937576, 0.870798, 0.990016],
-        vec![0.429292, 0.459984, 0.056629, 0.567589, 0.048561],
-        vec![0.454428, 0.253192, 0.173598, 0.321640, 0.632031],
-    ]);
-    let q = Sprs::new_from_vec(&[
-        vec![-0.491347, -0.280376, 0.396178, 0.585492],
-        vec![-0.200666, -0.817181, 0.078428, -0.284736],
-        vec![-0.817626, 0.437209, -0.041516, -0.246211],
-        vec![-0.137704, -0.146969, -0.848475, 0.474661],
-        vec![-0.175601, -0.202122, -0.339498, -0.538704],
-    ]);
-
-    let (h, qv) = arnoldi(&a, &q, 3);
-
-    test_utils::assert_eq_f_vec(
-        &h,
-        &vec![0.364447, -0.084894, -0.297025, 0.312162, 0.107295],
-        1e-5,
-    );
-    test_utils::assert_eq_f2d_vec(
-        &qv.to_dense(),
-        &vec![
-            vec![0.424511],
-            vec![-0.452464],
-            vec![-0.279270],
-            vec![-0.119267],
-            vec![0.723084],
-        ],
-        1e-5,
-    );
+        test_utils::assert_eq_f_vec(
+            &h,
+            &vec![0.364447, -0.084894, -0.297025, 0.312162, 0.107295],
+            1e-5,
+        );
+        test_utils::assert_eq_f2d_vec(
+            &qv.to_dense(),
+            &vec![
+                vec![0.424511],
+                vec![-0.452464],
+                vec![-0.279270],
+                vec![-0.119267],
+                vec![0.723084],
+            ],
+            1e-5,
+        );
+    }
 }
