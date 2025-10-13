@@ -1635,7 +1635,7 @@ fn gmres_2() {
     gmres::gmres(&a, &b, &mut x, 100, 1e-5).unwrap();
 
     // Calculate ground truth results
-    rsparse::lusol(&a, &mut b, 1, 1e-12);
+    let _ = rsparse::lusol(&a, &mut b, 1, 1e-12);
 
     gmres::test_utils::assert_eq_f_vec(&x, &b, 1e-10);
 }
@@ -2312,7 +2312,7 @@ fn gmres_3() {
     gmres::gmres(&a, &b, &mut x, 100, 1e-5).unwrap();
 
     // Calculate ground truth results
-    rsparse::lusol(&a, &mut b, 1, 1e-12);
+    let _ = rsparse::lusol(&a, &mut b, 1, 1e-12);
 
     gmres::test_utils::assert_eq_f_vec(&x, &b, 1e-10);
 }
@@ -2989,7 +2989,7 @@ fn gmres_4() {
     gmres::gmres(&a, &b, &mut x, 100, 1e-5).unwrap();
 
     // Calculate ground truth results
-    rsparse::lusol(&a, &mut b, 1, 1e-12);
+    let _ = rsparse::lusol(&a, &mut b, 1, 1e-12);
 
     gmres::test_utils::assert_eq_f_vec(&x, &b, 1e-10);
 }
@@ -4876,7 +4876,7 @@ fn gmres_5() {
     gmres::gmres(&a, &b, &mut x, 200, 1e-10).unwrap();
 
     // Calculate ground truth results
-    rsparse::lusol(&a, &mut b, 1, 1e-12);
+    let _ = rsparse::lusol(&a, &mut b, 1, 1e-12);
 
     gmres::test_utils::assert_eq_f_vec(&x, &b, 1e-10);
 }
@@ -6783,7 +6783,7 @@ fn gmres_6() {
     }
     
     // Calculate ground truth results
-    rsparse::lusol(&a, &mut b, 1, 1e-12);
+    let _ = rsparse::lusol(&a, &mut b, 1, 1e-12);
 
     gmres::test_utils::assert_eq_f_vec(&x, &b, 1e-5);
     assert!(restart_count > 0);

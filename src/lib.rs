@@ -51,7 +51,7 @@ pub mod dense_math;
 ///    - a: `Sprs` matrix
 ///    - col: Column index
 ///    
-fn get_sprs_col(a: &Sprs, col: usize) -> Sprs {
+fn get_sprs_col<T: rsparse::data::Numeric<T>>(a: &Sprs<T>, col: usize) -> Sprs<T> {
     let mut r = Sprs::new();
 
     // Set parameters
@@ -76,7 +76,7 @@ fn get_sprs_col(a: &Sprs, col: usize) -> Sprs {
 ///
 /// Adds `cm` into the last column of `a`
 ///
-fn add_col_dense(a: &mut [Vec<f64>], cm: &[Vec<f64>]) {
+fn add_col_dense<T: rsparse::data::Numeric<T>>(a: &mut [Vec<T>], cm: &[Vec<T>]) {
     // Check lengths are the same
     assert_eq!(a.len(), cm.len());
 
@@ -90,7 +90,7 @@ fn add_col_dense(a: &mut [Vec<f64>], cm: &[Vec<f64>]) {
 ///
 /// Adds `cm` into the last column of `a`
 ///
-fn add_col_sparse(a: &mut Sprs, cm: &Sprs) {
+fn add_col_sparse<T: rsparse::data::Numeric<T>>(a: &mut Sprs<T>, cm: &Sprs<T>) {
     // Check number of rows is the same
     assert_eq!(a.m, cm.m);
 
@@ -106,21 +106,21 @@ fn add_col_sparse(a: &mut Sprs, cm: &Sprs) {
 
 /// Norm 2 of a `Sprs` column matrix
 ///
-fn norm2(v: &Sprs) -> f64 {
-    let mut r = 0.;
+fn norm2<T: rsparse::data::Numeric<T>>(v: &Sprs<T>) -> T {
+    let mut r: T = T::zero();
     for i in 0..v.x.len() {
-        r += v.x[i].powi(2);
+        r += v.x[i].powf(2.);
     }
 
     r.powf(0.5)
 }
 
-/// Norm 2 of a [f64]
+/// Norm 2 of a [T]
 ///
-fn norm2_vec(v: &[f64]) -> f64 {
-    let mut r = 0.;
+fn norm2_vec<T: rsparse::data::Numeric<T>>(v: &[T]) -> T {
+    let mut r: T = T::zero();
     for i in v.iter() {
-        r += i.powi(2);
+        r += i.powf(2.);
     }
 
     r.powf(0.5)
@@ -128,7 +128,7 @@ fn norm2_vec(v: &[f64]) -> f64 {
 
 /// Arnoldi decomposition for sparse matrices
 ///
-fn arnoldi(a: &Sprs, q: &Sprs, k: usize) -> (Vec<f64>, Sprs) {
+fn arnoldi<T: rsparse::data::Numeric<T>>(a: &Sprs<T>, q: &Sprs<T>, k: usize) -> (Vec<T>, Sprs<T>) {
     let mut qv = a * get_sprs_col(q, k); // Krylov vector
     let mut h = Vec::with_capacity(k + 2);
 
@@ -138,9 +138,9 @@ fn arnoldi(a: &Sprs, q: &Sprs, k: usize) -> (Vec<f64>, Sprs) {
         if ht.i[0] == 0 {
             h.push(ht.x[0]);
         } else {
-            h.push(0.);
+            h.push(T::zero());
         }
-        qv = qv - (h[i] * qci);
+        qv = qv - rsparse::scxmat(h[i], &qci);
     }
 
     h.push(norm2(&qv));
@@ -151,8 +151,8 @@ fn arnoldi(a: &Sprs, q: &Sprs, k: usize) -> (Vec<f64>, Sprs) {
 
 /// Calculate the givens rotation matrix
 ///
-fn givens_rotation(v1: f64, v2: f64) -> (f64, f64) {
-    let t = (v1.powi(2) + v2.powi(2)).powf(0.5);
+fn givens_rotation<T: rsparse::data::Numeric<T>>(v1: T, v2: T) -> (T, T) {
+    let t = (v1.powf(2.) + v2.powf(2.)).powf(0.5);
     let cs = v1 / t;
     let sn = v2 / t;
 
@@ -161,7 +161,7 @@ fn givens_rotation(v1: f64, v2: f64) -> (f64, f64) {
 
 /// Apply givens rotation to H col
 ///
-fn apply_givens_rotation(h: &mut [f64], cs: &mut [f64], sn: &mut [f64], k: usize) {
+fn apply_givens_rotation<T: rsparse::data::Numeric<T>>(h: &mut [T], cs: &mut [T], sn: &mut [T], k: usize) {
     for i in 0..k {
         let temp = cs[i] * h[i] + sn[i] * h[i + 1];
         h[i + 1] = -sn[i] * h[i] + cs[i] * h[i + 1];
@@ -173,7 +173,7 @@ fn apply_givens_rotation(h: &mut [f64], cs: &mut [f64], sn: &mut [f64], k: usize
 
     // Eliminate H(i+1:i)
     h[k] = cs[k] * h[k] + sn[k] * h[k + 1];
-    h[k + 1] = 0.;
+    h[k + 1] = T::zero();
 }
 
 /// GMRES solver for `Sprs` input matrices. Solves Ax = b. Overwrites x with
@@ -183,35 +183,35 @@ fn apply_givens_rotation(h: &mut [f64], cs: &mut [f64], sn: &mut [f64], k: usize
 /// - a: `Sprs` matrix
 /// - b: Dense vector
 /// - x: Initial guess. When solving differential equations `b` is generally a
-/// good guess
+///   good guess
 /// - max_iter: Maximum number of iterations
 /// - threshold: Threshold for convergence
 ///
 /// # Returns:
 /// - Error if the method fails to converge
 ///
-pub fn gmres(
-    a: &Sprs,
-    b: &[f64],
-    x: &mut Vec<f64>,
+pub fn gmres<T: rsparse::data::Numeric<T> + dense_math::Num>(
+    a: &Sprs<T>,
+    b: &[T],
+    x: &mut Vec<T>,
     max_iter: usize,
-    threshold: f64,
+    threshold: T,
 ) -> Result<(), String> {
     // Use x as the initial vector
-    let r = rsparse::gaxpy(&(-1. * a), x, b);
+    let r = rsparse::gaxpy(&rsparse::scxmat(-T::one(), a), x, b);
 
     let b_norm = norm2_vec(b);
     let r_norm = norm2_vec(&r);
     let mut error = r_norm / b_norm;
 
     // Initialize 1D vectors (Optimizable?)
-    let mut sn = vec![0.; max_iter];
-    let mut cs = vec![0.; max_iter];
-    let mut e1 = vec![0.; max_iter + 1];
-    e1[0] = 1.;
+    let mut sn = vec![<T as rsparse::data::Zero>::zero(); max_iter];
+    let mut cs = vec![<T as rsparse::data::Zero>::zero(); max_iter];
+    let mut e1 = vec![<T as rsparse::data::Zero>::zero(); max_iter + 1];
+    e1[0] = T::one();
     let mut e = vec![error];
     let mut q = Sprs::new_from_vec(&dense_math::transpose(&[dense_math::scxvec(
-        r_norm.powi(-1),
+        r_norm.powf(-1.),
         &r,
     )]));
     let mut beta = dense_math::scxvec(r_norm, &e1);
@@ -233,7 +233,7 @@ pub fn gmres(
         // Update the residual vector
         beta[k + 1] = -sn[k] * beta[k];
         beta[k] *= cs[k];
-        error = f64::abs(beta[k + 1]) / b_norm;
+        error = T::abs(beta[k + 1]) / b_norm;
 
         // Save the error
         e.push(error);
@@ -249,7 +249,7 @@ pub fn gmres(
     for hi in hs.iter().take(col_len) {
         let mut th = hi.clone();
         // Pad the column with 0s to complete the column length
-        th.resize(col_len, 0.);
+        th.resize(col_len, <T as rsparse::data::Zero>::zero());
 
         // Transpose h and add to hm
         add_col_dense(&mut hm, &dense_math::transpose(&[th[..col_len].to_vec()]));

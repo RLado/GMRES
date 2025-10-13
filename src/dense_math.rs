@@ -7,7 +7,7 @@ pub trait Zero: Sized + std::ops::Add<Self, Output = Self> {
     ///
     /// # Laws
     ///
-    /// ```{.text}
+    /// ```text
     /// a + 0 = a       ∀ a ∈ Self
     /// 0 + a = a       ∀ a ∈ Self
     /// ```
